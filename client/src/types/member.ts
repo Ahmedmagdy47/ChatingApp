@@ -1,14 +1,14 @@
 export type Member = {
-    id: string
-    birthDate: string
-    imageUrl?: string
-    displayName: string
-    created: string
-    lastActive: string
-    gender: string
-    description?: string
-    city: string
-    country: string
+  id: string
+  birthDate: string
+  imageUrl?: string
+  displayName: string
+  created: string
+  lastActive: string
+  gender: string
+  description?: string
+  city: string
+  country: string
 }
 
 export type Photo = {
@@ -16,4 +16,11 @@ export type Photo = {
   url: string
   publicId?: string
   memberId: string
+}
+
+export type EditableMember = {
+  displayName: string
+  description?: string
+  city: string
+  country: string
 }
