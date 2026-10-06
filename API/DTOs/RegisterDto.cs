@@ -11,5 +11,9 @@ namespace API.DTOs
         [Required]
         [MinLength(8)]
         public string Password { get; set; } = string.Empty;
+        [Required] public string Gender { get; set; } = string.Empty;
+        [Required] public string City { get; set; } = string.Empty;
+        [Required] public string Country { get; set; } = string.Empty;
+        [Required] public DateOnly DateOfBirth { get; set; }
     }
 }
