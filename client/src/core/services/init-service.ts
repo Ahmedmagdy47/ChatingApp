@@ -1,16 +1,19 @@
 import { inject, Service } from '@angular/core';
 import { AccountService } from './account-service';
 import { of } from 'rxjs';
+import { LikesService } from './likes-service';
 
 @Service()
 export class InitService {
     private accountService = inject(AccountService);
-
+    private likesService = inject(LikesService);
+    
     Init() {
         const userString = localStorage.getItem('user');
         if (!userString) return of(null);
         const user = JSON.parse(userString);
         this.accountService.crrentUser.set(user);
+        this.likesService.getLikeIds();
 
         return of(null)
     }
