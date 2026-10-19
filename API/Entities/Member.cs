@@ -21,9 +21,13 @@ namespace API.Entities
 
         [JsonIgnore]
         public List<MemberLike> LikedByMembers { get; set; } = [];
-        
+
         [JsonIgnore]
         public List<MemberLike> LikedMembers { get; set; } = [];
+        [JsonIgnore]
+        public List<Message> MessageSent { get; set; } = [];
+        [JsonIgnore]
+        public List<Message> MessageReceived { get; set; } = [];
 
         [JsonIgnore]
         [ForeignKey(nameof(Id))]
