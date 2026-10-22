@@ -1,15 +1,17 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using API.Entities;
 using API.Interfaces;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 
 namespace API.Services
 {
-    public class TokenService(IConfiguration config) : ITokenService
+    public class TokenService(IConfiguration config, UserManager<AppUsers> userManager) : ITokenService
     {
-        public string CreateToken(AppUsers user)
+        public async Task<string> CreateToken(AppUsers user)
         {
             var tokenKay = config["TokenKey"] ?? throw new Exception("Token key is missing in configuration");
             if (tokenKay.Length < 64) 
@@ -18,16 +20,20 @@ namespace API.Services
 
             var claims = new List<Claim>
             {
-                new(ClaimTypes.Email, user.Email),
+                new(ClaimTypes.Email, user.Email!),
                 new(ClaimTypes.NameIdentifier, user.Id)
             };
 
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha512Signature);            
+            var roles = await userManager.GetRolesAsync(user);
+
+            claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
+
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha512Signature);
 
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(claims),
-                Expires = DateTime.UtcNow.AddDays(7),
+                Expires = DateTime.UtcNow.AddMinutes(7),
                 SigningCredentials = creds
             };
 
@@ -35,6 +41,12 @@ namespace API.Services
             var token = tokenHandler.CreateToken(tokenDescriptor);
             
             return tokenHandler.WriteToken(token);
+        }
+
+        public string GenerateRefreshToken()
+        {
+            var randomBytes = RandomNumberGenerator.GetBytes(64);
+            return Convert.ToBase64String(randomBytes);
         }
     }
 }

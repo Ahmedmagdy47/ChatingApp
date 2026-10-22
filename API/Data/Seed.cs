@@ -3,15 +3,16 @@ using System.Text;
 using System.Text.Json;
 using API.DTOs;
 using API.Entities;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace API.Data
 {
     public class Seed
     {
-        public static async Task SeedUsers(AppDbContext context)
+        public static async Task SeedUsers(UserManager<AppUsers> userManager)
         {
-            if (await context.Users.AnyAsync()) return;
+            if (await userManager.Users.AnyAsync()) return;
 
             var memberData = await File.ReadAllTextAsync("Data/UserSeedData.json");
             var members = JsonSerializer.Deserialize<List<SeedUserDto>>(memberData);
@@ -25,16 +26,14 @@ namespace API.Data
 
             foreach (var member in members)
             {
-                using var hmac = new HMACSHA512();
-                
+
                 var user = new AppUsers
                 {
                     Id = member.Id,
                     Email = member.Email,
+                    UserName = member.Email,
                     DisplayName = member.DisplayName,
                     ImageUrl = member.ImageUrl,
-                    PasswordHash = hmac.ComputeHash(Encoding.UTF8.GetBytes("Password@123")),
-                    PasswordSalt = hmac.Key,
                     Member = new Member
                     {
                         Id = member.Id,
@@ -56,10 +55,24 @@ namespace API.Data
                     MemberId = member.Id
                 });
 
-                context.Users.Add(user);
+                var result = await userManager.CreateAsync(user, "Password@123");
+
+                if (!result.Succeeded)
+                {
+                    Console.WriteLine(result.Errors.First().Description);
+                }
+                await userManager.AddToRoleAsync(user, "Member");
             }
 
-            await context.SaveChangesAsync();
+            var admin = new AppUsers
+            {
+                UserName = "admin@test.com",
+                Email = "admin@test.com",
+                DisplayName = "Admin"
+            };
+
+            await userManager.CreateAsync(admin, "Password@123");
+            await userManager.AddToRolesAsync(admin, ["Admin", "Moderator"]);
         }
     }
 }
