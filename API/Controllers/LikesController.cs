@@ -8,7 +8,7 @@ namespace API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class LikesController(ILikesRepository likesRepo) : ControllerBase
+    public class LikesController(IUnitOfWork uow) : ControllerBase
     {
         [HttpPost("{targetMemberId}")]
         public async Task<ActionResult> ToggleLike(string targetMemberId)
@@ -17,7 +17,7 @@ namespace API.Controllers
 
             if (sourceMemberId == targetMemberId) return BadRequest("You can't like yourself");
 
-            var existingLike = await likesRepo.GetMemberLike(sourceMemberId, targetMemberId);
+            var existingLike = await uow.LikesRepository.GetMemberLike(sourceMemberId, targetMemberId);
 
             if (existingLike == null)
             {
@@ -27,14 +27,14 @@ namespace API.Controllers
                     TargetMemberId = targetMemberId
                 };
 
-                likesRepo.AddLike(like);
+                uow.LikesRepository.AddLike(like);
             }
             else
             {
-                likesRepo.DeleteLike(existingLike);
+                uow.LikesRepository.DeleteLike(existingLike);
             }
 
-            if (await likesRepo.SaveAllChanges()) return Ok();
+            if (await uow.Complete()) return Ok();
 
             return BadRequest("Can't update like");
         }
@@ -42,14 +42,14 @@ namespace API.Controllers
         [HttpGet("list")]
         public async Task<ActionResult<IReadOnlyList<string>>> GetCurrentMemberLikesIds()
         {
-            return Ok(await likesRepo.GetCurrentMemberLikeIds(User.GetMemberId()));
+            return Ok(await uow.LikesRepository.GetCurrentMemberLikeIds(User.GetMemberId()));
         }
 
         [HttpGet]
         public async Task<ActionResult<PaginatedResult<Member>>> GetMemberLikes([FromQuery] LikesParams likesParams)
         {
             likesParams.MemberId = User.GetMemberId();
-            var members = await likesRepo.GetMemberLikes(likesParams);
+            var members = await uow.LikesRepository.GetMemberLikes(likesParams);
 
             return Ok(members);
         }
